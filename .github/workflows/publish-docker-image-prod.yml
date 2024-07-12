@@ -1,4 +1,4 @@
-name: Publish Docker image
+name: Publish api-server Docker image to DockerHub
 
 on:
   workflow_dispatch:
