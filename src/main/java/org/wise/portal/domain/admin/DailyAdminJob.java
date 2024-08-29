@@ -129,7 +129,8 @@ public class DailyAdminJob {
     gatherPortalStatistics();
 
     // query the vle tables and save a new row in the vleStatistics table
-    gatherVLEStatistics();
+    // too process-intensive, also, looking at out-of-date tables (e.g. studentData)
+    // gatherVLEStatistics();
 
     // create and send a message to uber_admin
     String messageBody = getSummaryMessage();
