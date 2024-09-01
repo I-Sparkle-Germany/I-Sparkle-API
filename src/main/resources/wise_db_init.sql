@@ -66,11 +66,11 @@ create table acl_sid (
 
 create table annotations (
     id integer not null auto_increment,
-    clientSaveTime datetime not null,
+    clientSaveTime datetime(3) not null,
     componentId varchar(30),
     data text not null,
     nodeId varchar(30),
-    serverSaveTime datetime not null,
+    serverSaveTime datetime(3) not null,
     type varchar(30) not null,
     fromWorkgroupId bigint,
     periodId bigint not null,
@@ -93,14 +93,14 @@ create table annotations (
 create table events (
     id integer not null auto_increment,
     category varchar(255) not null,
-    clientSaveTime datetime not null,
+    clientSaveTime datetime(3) not null,
     componentId varchar(30),
     componentType varchar(30),
     context varchar(30) not null,
     data text,
     event varchar(255) not null,
     nodeId varchar(30),
-    serverSaveTime datetime not null,
+    serverSaveTime datetime(3) not null,
     periodId bigint,
     runId bigint,
     workgroupId bigint,
@@ -403,13 +403,13 @@ create table studentAssets (
 
 create table studentWork (
     id integer not null auto_increment,
-    clientSaveTime datetime not null,
+    clientSaveTime datetime(3) not null,
     componentId varchar(30),
     componentType varchar(30),
     isAutoSave bit not null,
     isSubmit bit not null,
     nodeId varchar(30) not null,
-    serverSaveTime datetime not null,
+    serverSaveTime datetime(3) not null,
     studentData mediumtext not null,
     peerGroupId bigint,
     periodId bigint not null,
@@ -548,6 +548,7 @@ CREATE TABLE `user_tags` (
     id bigint not null auto_increment,
     users_fk bigint not null,
     text varchar(100) not null,
+    color varchar(25) DEFAULT null,
     constraint user_tags_users_fk foreign key (users_fk) references users (id),
     primary key (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
