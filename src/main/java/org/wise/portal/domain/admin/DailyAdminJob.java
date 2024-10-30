@@ -126,35 +126,36 @@ public class DailyAdminJob {
   @Scheduled(cron = "0 0 0 * * ?")
   public void doJob() {
     // query for the portal statistics and save a new row in the portalStatistics table
-    gatherPortalStatistics();
+    // gatherPortalStatistics();
 
     // query the vle tables and save a new row in the vleStatistics table
-    gatherVLEStatistics();
+    // too process-intensive, also, looking at out-of-date tables (e.g. studentData)
+    // gatherVLEStatistics();
 
     // create and send a message to uber_admin
-    String messageBody = getSummaryMessage();
-    sendEmail(messageBody);
+    // String messageBody = getSummaryMessage();
+    // sendEmail(messageBody);
 
     // post statistics to hub if allowed
-    try {
-      Portal portal = portalService.getById(1);
-      if (portal.isSendStatisticsToHub()) {
-        try {
-          JSONObject wiseStatisticsJSONObject = new JSONObject();
-          wiseStatisticsJSONObject.put("wiseName", appProperties.getProperty("wise.name"));
+    // try {
+    //   Portal portal = portalService.getById(1);
+    //   if (portal.isSendStatisticsToHub()) {
+    //     try {
+    //       JSONObject wiseStatisticsJSONObject = new JSONObject();
+    //       wiseStatisticsJSONObject.put("wiseName", appProperties.getProperty("wise.name"));
 
-          PortalStatistics latestPortalStatistics = portalStatisticsService
-              .getLatestPortalStatistics();
-          wiseStatisticsJSONObject.put("portal", latestPortalStatistics.getJSONObject());
-          postStatistics(wiseStatisticsJSONObject.toString());
-        } catch (JSONException e) {
-          e.printStackTrace();
-        }
+    //       PortalStatistics latestPortalStatistics = portalStatisticsService
+    //           .getLatestPortalStatistics();
+    //       wiseStatisticsJSONObject.put("portal", latestPortalStatistics.getJSONObject());
+    //       postStatistics(wiseStatisticsJSONObject.toString());
+    //     } catch (JSONException e) {
+    //       e.printStackTrace();
+    //     }
 
-      }
-    } catch (ObjectNotFoundException e) {
-      // do nothing
-    }
+    //   }
+    // } catch (ObjectNotFoundException e) {
+    //   // do nothing
+    // }
   }
 
   /**
