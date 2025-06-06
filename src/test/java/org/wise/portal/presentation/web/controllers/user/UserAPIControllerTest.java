@@ -7,32 +7,31 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.easymock.EasyMockRunner;
+import org.easymock.EasyMockExtension;
 import org.easymock.TestSubject;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.wise.portal.dao.ObjectNotFoundException;
-import org.wise.portal.domain.run.Run;
 import org.wise.portal.presentation.web.controllers.APIControllerTest;
 import org.wise.portal.presentation.web.exception.IncorrectPasswordException;
 import org.wise.portal.service.password.impl.PasswordServiceImpl;
 
-@RunWith(EasyMockRunner.class)
+@ExtendWith(EasyMockExtension.class)
 public class UserAPIControllerTest extends APIControllerTest {
 
   @TestSubject
   private UserAPIController userAPIController = new UserAPIController();
 
-  @Before
+  @BeforeEach
   public void setUp() {
     super.setUp();
     ReflectionTestUtils.setField(userAPIController, "passwordService", new PasswordServiceImpl());
@@ -53,7 +52,7 @@ public class UserAPIControllerTest extends APIControllerTest {
     String username = "";
     HashMap<String, Object> userMap = userAPIController.getUserInfo(studentAuth, username);
     assertEquals(STUDENT_FIRSTNAME, userMap.get("firstName"));
-    assertEquals("student", userMap.get("role"));
+    assertEquals("student", ((ArrayList<String>) userMap.get("roles")).get(0));
     assertTrue((boolean) userMap.get("isGoogleUser"));
     verify(userService);
   }
@@ -65,7 +64,7 @@ public class UserAPIControllerTest extends APIControllerTest {
     String username = "";
     HashMap<String, Object> userMap = userAPIController.getUserInfo(teacherAuth, username);
     assertEquals(TEACHER_FIRSTNAME, userMap.get("firstName"));
-    assertEquals("teacher", userMap.get("role"));
+    assertEquals("teacher", ((ArrayList<String>) userMap.get("roles")).get(0));
     assertFalse((boolean) userMap.get("isGoogleUser"));
     verify(userService);
   }
@@ -75,6 +74,7 @@ public class UserAPIControllerTest extends APIControllerTest {
     expect(request.getContextPath()).andReturn("wise");
     replay(request);
     expect(appProperties.getProperty("google_analytics_id")).andReturn("UA-XXXXXX-1");
+    expect(appProperties.getProperty("google_tag_manager_id")).andReturn("GTM-XXXXXXXX");
     expect(appProperties.getProperty("recaptcha_public_key")).andReturn("recaptcha-123-abc");
     expect(appProperties.getProperty("wise4.hostname")).andReturn("http://localhost:8080/legacy");
     expect(appProperties.getProperty("discourse_url")).andReturn("http://localhost:9292");
@@ -86,6 +86,7 @@ public class UserAPIControllerTest extends APIControllerTest {
     assertEquals("wise/api/logout", config.get("logOutURL"));
     assertFalse((boolean) config.get("isGoogleClassroomEnabled"));
     assertEquals("UA-XXXXXX-1", config.get("googleAnalyticsId"));
+    assertEquals("GTM-XXXXXXXX", config.get("googleTagManagerId"));
     verify(request);
     verify(appProperties);
   }
@@ -223,30 +224,4 @@ public class UserAPIControllerTest extends APIControllerTest {
     assertEquals(response.getStatusCode(), HttpStatus.OK);
     assertEquals(response.getBody().get("username"), username);
   }
-
-  @Test
-  public void getRunInfoById_RunExistsInDB_ReturnRunInfo() throws ObjectNotFoundException {
-    expect(userService.retrieveUserByUsername(TEACHER_USERNAME)).andReturn(teacher1);
-    expect(userService.isUserAssociatedWithRun(teacher1, run1)).andReturn(true);
-    replay(userService);
-    expect(runService.retrieveById(runId1)).andReturn(run1);
-    replay(runService);
-    HashMap<String, Object> info = userAPIController.getRunInfoById(teacherAuth, runId1);
-    assertEquals("1", info.get("id"));
-    assertEquals(RUN1_RUNCODE, info.get("runCode"));
-    verify(runService);
-  }
-
-  @Test
-  public void getRunInfoById_RunNotInDB_ReturnRunInfo() throws ObjectNotFoundException {
-    Long runIdNotInDB = -1L;
-    expect(runService.retrieveById(runIdNotInDB))
-        .andThrow(new ObjectNotFoundException(runIdNotInDB, Run.class));
-    replay(runService);
-    HashMap<String, Object> info = userAPIController.getRunInfoById(teacherAuth, runIdNotInDB);
-    assertEquals(1, info.size());
-    assertEquals("runNotFound", info.get("error"));
-    verify(runService);
-  }
-
 }

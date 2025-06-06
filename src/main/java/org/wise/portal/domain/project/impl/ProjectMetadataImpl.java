@@ -125,14 +125,13 @@ public class ProjectMetadataImpl implements ProjectMetadata, Serializable {
   @Column(name = "tools", length = 32768, columnDefinition = "text")
   @Getter
   @Setter
-  private String tools;   // text (blob) 2^15
+  private String tools; // text (blob) 2^15
 
   @Column(name = "lesson_plan", length = 5120000, columnDefinition = "mediumtext")
   @Getter
   @Setter
   private String lessonPlan;
 
-  @Column(name = "standards", length = 5120000, columnDefinition = "mediumtext")
   @Getter
   @Setter
   private String standards;
@@ -200,6 +199,20 @@ public class ProjectMetadataImpl implements ProjectMetadata, Serializable {
   @Setter
   private String navMode;
 
+  @Getter
+  @Setter
+  private String disciplines;
+
+  @Getter
+  @Setter
+  private String resources;
+
+  private String standardsDefault = "{\"commonCore\": [], \"ngss\": [], \"learningForJustice\": []}";
+
+  @Getter
+  @Setter
+  private String unitType;
+
   public ProjectMetadataImpl() {
   }
 
@@ -235,6 +248,18 @@ public class ProjectMetadataImpl implements ProjectMetadata, Serializable {
       authors = new JSONArray();
     }
     setAuthors(authors.toString());
+
+    JSONArray disciplines = metadataJSON.optJSONArray("disciplines");
+    if (disciplines == null) {
+      disciplines = new JSONArray();
+    }
+    setDisciplines(disciplines.toString());
+
+    JSONArray resources = metadataJSON.optJSONArray("resources");
+    if (resources == null) {
+      resources = new JSONArray();
+    }
+    setResources(resources.toString());
 
     JSONArray parentProjects = metadataJSON.optJSONArray("parentProjects");
     if (parentProjects == null) {
@@ -308,10 +333,7 @@ public class ProjectMetadataImpl implements ProjectMetadata, Serializable {
     }
     setLessonPlan(lessonPlan);
 
-    String standards = metadataJSON.optString("standards", "");
-    if (standards.equals("null")) {
-      standards = "";
-    }
+    String standards = metadataJSON.optString("standards", this.standardsDefault);
     setStandards(standards);
 
     JSONObject standardsAddressed = metadataJSON.optJSONObject("standardsAddressed");
@@ -357,6 +379,8 @@ public class ProjectMetadataImpl implements ProjectMetadata, Serializable {
       postLevel = (long) 5;
     }
     setPostLevel(postLevel);
+
+    setUnitType(metadataJSON.optString("unitType", "Platform"));
   }
 
   /**
@@ -372,7 +396,8 @@ public class ProjectMetadataImpl implements ProjectMetadata, Serializable {
     if (techReqs != null && !techReqs.equals("") && !techReqs.equals("null")) {
       try {
         JSONObject techReqsJSON = new JSONObject(techReqs);
-        if (techReqsJSON.has("java") && (techReqsJSON.getString("java").equals("checked") || techReqsJSON.getString("java").equals("true"))) {
+        if (techReqsJSON.has("java") && (techReqsJSON.getString("java").equals("checked")
+            || techReqsJSON.getString("java").equals("true"))) {
           techReqsAndDetailsStringBuf.append("Java");
         }
 
@@ -383,14 +408,16 @@ public class ProjectMetadataImpl implements ProjectMetadata, Serializable {
           techReqsAndDetailsStringBuf.append("Flash");
         }
 
-        if (techReqsJSON.has("quickTime") && (techReqsJSON.getString("quickTime").equals("checked") || techReqsJSON.getString("quickTime").equals("true"))) {
+        if (techReqsJSON.has("quickTime") && (techReqsJSON.getString("quickTime").equals("checked")
+            || techReqsJSON.getString("quickTime").equals("true"))) {
           if (techReqsAndDetailsStringBuf.length() != 0) {
             techReqsAndDetailsStringBuf.append(", ");
           }
           techReqsAndDetailsStringBuf.append("QuickTime");
         }
 
-        if (techReqsJSON.has("techDetails") && techReqsJSON.getString("techDetails") != null && !techReqsJSON.getString("techDetails").equals("")) {
+        if (techReqsJSON.has("techDetails") && techReqsJSON.getString("techDetails") != null
+            && !techReqsJSON.getString("techDetails").equals("")) {
           if (techReqsAndDetailsStringBuf.length() != 0) {
             techReqsAndDetailsStringBuf.append(", ");
           }
@@ -442,12 +469,17 @@ public class ProjectMetadataImpl implements ProjectMetadata, Serializable {
         metadata.put("tools", new JSONObject());
       }
 
-      String standardsAddressedString = metadata.getString("standardsAddressed");
-      if (standardsAddressedString != null && standardsAddressedString != "null") {
-        JSONObject standardsAddressedJSON = new JSONObject(standardsAddressedString);
-        metadata.put("standardsAddressed", standardsAddressedJSON);
+      String standardsString = metadata.getString("standards");
+      if (standardsString != null && standardsString != "null") {
+        JSONObject standardsJSON;
+        try {
+          standardsJSON = new JSONObject(standardsString);
+        } catch (JSONException e) {
+          standardsJSON = new JSONObject(standardsDefault);
+        }
+        metadata.put("standards", standardsJSON);
       } else {
-        metadata.put("standardsAddressed", new JSONObject());
+        metadata.put("standards", new JSONObject());
       }
 
       String parentProjectsString = metadata.getString("parentProjects");
@@ -458,6 +490,34 @@ public class ProjectMetadataImpl implements ProjectMetadata, Serializable {
         metadata.put("parentProjects", new JSONArray());
       }
 
+      String disciplinesString = metadata.getString("disciplines");
+      if (disciplinesString != null && disciplinesString != "null") {
+        JSONArray disciplinesJSON = new JSONArray(disciplinesString);
+        metadata.put("disciplines", disciplinesJSON);
+      } else {
+        metadata.put("disciplines", new JSONArray());
+      }
+
+      String featuresString = metadata.getString("features");
+      if (featuresString != null && featuresString != "null") {
+        JSONArray featuresJSON;
+        try {
+          featuresJSON = new JSONArray(featuresString);
+        } catch (JSONException e) {
+          featuresJSON = new JSONArray();
+        }
+        metadata.put("features", featuresJSON);
+      } else {
+        metadata.put("features", new JSONArray());
+      }
+
+      String resourcesString = metadata.getString("resources");
+      if (resourcesString != null && resourcesString != "null") {
+        JSONArray resourcesJSON = new JSONArray(resourcesString);
+        metadata.put("resources", resourcesJSON);
+      } else {
+        metadata.put("resources", new JSONArray());
+      }
     } catch (JSONException e) {
       e.printStackTrace();
     }

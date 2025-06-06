@@ -37,9 +37,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.handler.SimpleMappingExceptionResolver;
+import org.wise.portal.dao.ObjectNotFoundException;
+import org.wise.portal.domain.portal.Portal;
 import org.wise.portal.domain.user.User;
 import org.wise.portal.presentation.web.controllers.ControllerUtil;
 import org.wise.portal.service.mail.IMailFacade;
+import org.wise.portal.service.portal.PortalService;
 
 /**
  * Resolves Exceptions by gathering the following information and
@@ -59,6 +62,9 @@ public class WISESimpleMappingExceptionResolver extends SimpleMappingExceptionRe
   @Autowired
   private Environment appProperties;
 
+  @Autowired
+  private PortalService portalService;
+
   private static final String HANDLE_EXCEPTION_PROPERTY_KEY = "handle_exception";
 
   private static final String HANDLE_EXCEPTION_MAIL_SUBJECT = "WISE Exception Report";
@@ -67,18 +73,23 @@ public class WISESimpleMappingExceptionResolver extends SimpleMappingExceptionRe
   public ModelAndView resolveException(HttpServletRequest request, HttpServletResponse response,
       Object handler, Exception exception) {
     exception.printStackTrace();
-    String sendEmailOnExceptionStr = appProperties.getProperty("send_email_on_exception");
-    boolean sendEmailOnException = sendEmailOnExceptionStr.equalsIgnoreCase("true");
+    boolean sendEmailOnException = false;
+    try {
+      Portal portal = portalService.getById(1);
+      sendEmailOnException = portal.isSendMailOnException();
+    } catch (ObjectNotFoundException e) {
+      e.printStackTrace();
+    }
 
     if (sendEmailOnException) {
       String portalName = appProperties.getProperty("wise.name");
       String[] recipients = appProperties.getProperty(HANDLE_EXCEPTION_PROPERTY_KEY).split(",");
       String subject = HANDLE_EXCEPTION_MAIL_SUBJECT + ": (" + portalName + ")";
-      String fromEmail = appProperties.getProperty("mail.from");
+      String fromEmail = appProperties.getProperty("portalemailaddress");
       String message = getHandleExceptionMessage(request, exception);
 
-      ExceptionEmailSender emailSender =
-          new ExceptionEmailSender(recipients,subject,fromEmail,message);
+      ExceptionEmailSender emailSender = new ExceptionEmailSender(recipients, subject, fromEmail,
+          message);
       Thread thread = new Thread(emailSender);
       thread.start();
     }
@@ -91,8 +102,8 @@ public class WISESimpleMappingExceptionResolver extends SimpleMappingExceptionRe
     String fromEmail;
     String message;
 
-    public ExceptionEmailSender(String[] recipients, String subject,
-        String fromEmail, String message) {
+    public ExceptionEmailSender(String[] recipients, String subject, String fromEmail,
+        String message) {
       this.recipients = recipients;
       this.subject = subject;
       this.fromEmail = fromEmail;
@@ -122,9 +133,8 @@ public class WISESimpleMappingExceptionResolver extends SimpleMappingExceptionRe
     Date time = Calendar.getInstance().getTime();
     User user = ControllerUtil.getSignedInUser();
 
-    String fullUrl = request.getScheme() + "://" + request.getServerName() + ":" +
-        request.getServerPort() + request.getRequestURI() + "?" +
-        request.getQueryString();
+    String fullUrl = request.getScheme() + "://" + request.getServerName() + ":"
+        + request.getServerPort() + request.getRequestURI() + "?" + request.getQueryString();
 
     Writer result = new StringWriter();
     PrintWriter printWriter = new PrintWriter(result);
@@ -138,12 +148,9 @@ public class WISESimpleMappingExceptionResolver extends SimpleMappingExceptionRe
       username = "unknown";
     }
 
-    String message = "The following WISE exception was thrown on " +
-        time.toString() + "\n\n" +
-        "username: " + username + "\n" +
-        "url: " + fullUrl + "\n\n" +
-        "exception message: " + exception.toString() + "\n\n" +
-        "stacktrace:\n" + stackTrace;
+    String message = "The following WISE exception was thrown on " + time.toString() + "\n\n"
+        + "username: " + username + "\n" + "url: " + fullUrl + "\n\n" + "exception message: "
+        + exception.toString() + "\n\n" + "stacktrace:\n" + stackTrace;
 
     return message;
   }

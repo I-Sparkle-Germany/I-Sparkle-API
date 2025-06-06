@@ -19,12 +19,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import org.easymock.EasyMockRunner;
+import org.easymock.EasyMockExtension;
 import org.easymock.Mock;
 import org.easymock.TestSubject;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -33,14 +33,16 @@ import org.wise.portal.domain.PeriodNotFoundException;
 import org.wise.portal.domain.authentication.impl.TeacherUserDetails;
 import org.wise.portal.domain.project.Project;
 import org.wise.portal.domain.run.Run;
+import org.wise.portal.domain.user.User;
 import org.wise.portal.presentation.web.controllers.APIControllerTest;
 import org.wise.portal.presentation.web.exception.InvalidNameException;
 import org.wise.portal.presentation.web.response.SimpleResponse;
 import org.wise.portal.service.authentication.DuplicateUsernameException;
 import org.wise.portal.service.authentication.UserDetailsService;
 import org.wise.portal.service.password.impl.PasswordServiceImpl;
+import org.wise.portal.service.usertags.UserTagsService;
 
-@RunWith(EasyMockRunner.class)
+@ExtendWith(EasyMockExtension.class)
 public class TeacherAPIControllerTest extends APIControllerTest {
 
   @TestSubject
@@ -49,7 +51,10 @@ public class TeacherAPIControllerTest extends APIControllerTest {
   @Mock
   private UserDetailsService userDetailsService;
 
-  @Before
+  @Mock
+  private UserTagsService userTagsService;
+
+  @BeforeEach
   public void setUp() {
     super.setUp();
     ReflectionTestUtils.setField(teacherAPIController, "passwordService",
@@ -91,7 +96,9 @@ public class TeacherAPIControllerTest extends APIControllerTest {
     expect(projectService.getProjectPath(isA(Project.class))).andReturn("").anyTimes();
     expect(projectService.getProjectSharedOwnersList(isA(Project.class))).andReturn(Arrays.asList())
         .anyTimes();
-    replay(projectService, runService, userService);
+    expect(userTagsService.getTagsList(isA(User.class), isA(Project.class)))
+        .andReturn(Arrays.asList()).anyTimes();
+    replay(projectService, runService, userService, userTagsService);
   }
 
   @Test
@@ -357,10 +364,10 @@ public class TeacherAPIControllerTest extends APIControllerTest {
     periodNamesSet.add("1");
     periodNamesSet.add("2");
     periodNamesSet.add("free");
-    expect(runService.createRun(projectId, teacher1, periodNamesSet, maxStudentsPerTeam, startDate,
+    expect(runService.createRun(projectId, teacher1, periodNamesSet, false, maxStudentsPerTeam, startDate,
         endDate, isLockedAfterEndDate, Locale.US)).andReturn(run1);
     replay(runService);
-    teacherAPIController.createRun(teacherAuth, request, projectId, periods, maxStudentsPerTeam,
+    teacherAPIController.createRun(teacherAuth, request, projectId, periods, false, maxStudentsPerTeam,
         startDate, endDate, isLockedAfterEndDate);
     verify(userService);
     verify(request);
