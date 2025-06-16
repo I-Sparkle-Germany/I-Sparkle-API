@@ -30,7 +30,6 @@ import org.wise.portal.dao.ObjectNotFoundException;
 import org.wise.portal.domain.authentication.MutableUserDetails;
 import org.wise.portal.domain.authentication.impl.StudentUserDetails;
 import org.wise.portal.domain.authentication.impl.TeacherUserDetails;
-import org.wise.portal.domain.group.Group;
 import org.wise.portal.domain.project.Project;
 import org.wise.portal.domain.run.Run;
 import org.wise.portal.domain.user.User;
@@ -163,6 +162,7 @@ public class UserAPIController {
     config.put("contextPath", contextPath);
     config.put("currentTime", System.currentTimeMillis());
     config.put("googleAnalyticsId", appProperties.getProperty("google_analytics_id"));
+    config.put("googleTagManagerId", appProperties.getProperty("google_tag_manager_id"));
     config.put("googleClientId", googleClientId);
     config.put("isGoogleClassroomEnabled", isGoogleClassroomEnabled());
     config.put("logOutURL", contextPath + "/api/logout");
@@ -229,49 +229,6 @@ public class UserAPIController {
     return langs;
   }
 
-  @Secured("ROLE_USER")
-  @GetMapping("/run/info-by-id")
-  HashMap<String, Object> getRunInfoById(Authentication auth, @RequestParam("runId") Long runId) {
-    try {
-      User user = userService.retrieveUserByUsername(auth.getName());
-      Run run = runService.retrieveById(runId);
-      if (userService.isUserAssociatedWithRun(user, run)) {
-        return getRunInfo(run);
-      }
-    } catch (ObjectNotFoundException e) {
-    }
-    return createRunNotFoundInfo();
-  }
-
-  protected HashMap<String, Object> getRunInfo(Run run) {
-    HashMap<String, Object> info = new HashMap<String, Object>();
-    info.put("id", String.valueOf(run.getId()));
-    info.put("name", run.getName());
-    info.put("runCode", run.getRuncode());
-    info.put("startTime", run.getStartTimeMilliseconds());
-    info.put("endTime", run.getEndTimeMilliseconds());
-    info.put("periods", getPeriodNames(run));
-    User owner = run.getOwner();
-    info.put("teacherFirstName", owner.getUserDetails().getFirstname());
-    info.put("teacherLastName", owner.getUserDetails().getLastname());
-    info.put("wiseVersion", run.getProject().getWiseVersion());
-    return info;
-  }
-
-  private List<String> getPeriodNames(Run run) {
-    List<String> periods = new ArrayList<String>();
-    for (Group period : run.getPeriods()) {
-      periods.add(period.getName());
-    }
-    return periods;
-  }
-
-  protected HashMap<String, Object> createRunNotFoundInfo() {
-    HashMap<String, Object> info = new HashMap<String, Object>();
-    info.put("error", "runNotFound");
-    return info;
-  }
-
   private String getLanguageName(String localeString) {
     if (localeString.toLowerCase().equals("zh_tw")) {
       return "Chinese (Traditional)";
@@ -304,6 +261,7 @@ public class UserAPIController {
     HashMap<String, Object> map = new HashMap<String, Object>();
     map.put("id", run.getId());
     map.put("name", run.getName());
+    map.put("isSurvey", run.isSurvey());
     map.put("maxStudentsPerTeam", run.getMaxWorkgroupSize());
     map.put("runCode", run.getRuncode());
     map.put("startTime", run.getStartTimeMilliseconds());

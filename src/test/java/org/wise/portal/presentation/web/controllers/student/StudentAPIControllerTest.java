@@ -13,12 +13,12 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import org.easymock.EasyMockRunner;
+import org.easymock.EasyMockExtension;
 import org.easymock.Mock;
 import org.easymock.TestSubject;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -41,7 +41,7 @@ import org.wise.portal.service.authentication.DuplicateUsernameException;
 import org.wise.portal.service.password.impl.PasswordServiceImpl;
 import org.wise.portal.service.student.StudentService;
 
-@RunWith(EasyMockRunner.class)
+@ExtendWith(EasyMockExtension.class)
 public class StudentAPIControllerTest extends APIControllerTest {
 
   @TestSubject
@@ -56,7 +56,7 @@ public class StudentAPIControllerTest extends APIControllerTest {
   @Mock(fieldName = "i18nProperties")
   private Properties i18nProperties;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     super.setUp();
     ReflectionTestUtils.setField(studentAPIController, "passwordService",
@@ -120,29 +120,7 @@ public class StudentAPIControllerTest extends APIControllerTest {
     verify(request);
   }
 
-  @Test
-  public void getRunInfoByRunCode_RunExistsInDB_ReturnRunInfo() throws ObjectNotFoundException {
-    expect(runService.retrieveRunByRuncode(RUN1_RUNCODE)).andReturn(run1);
-    replay(runService);
-    HashMap<String, Object> info = studentAPIController.getRunInfoByRunCode(RUN1_RUNCODE);
-    assertEquals("1", info.get("id"));
-    assertEquals(RUN1_RUNCODE, info.get("runCode"));
-    verify(runService);
-  }
-
-  @Test
-  public void getRunInfoByRunCode_RunNotInDB_ReturnRunInfo() throws ObjectNotFoundException {
-    String runCodeNotInDB = "runCodeNotInDB";
-    expect(runService.retrieveRunByRuncode(runCodeNotInDB))
-        .andThrow(new ObjectNotFoundException(runCodeNotInDB, Run.class));
-    replay(runService);
-    HashMap<String, Object> info = studentAPIController.getRunInfoByRunCode(runCodeNotInDB);
-    assertEquals(1, info.size());
-    assertEquals("runNotFound", info.get("error"));
-    verify(runService);
-  }
-
-  @Test
+ @Test
   public void getSecurityQuestions_DefaultQuestions_ReturnSixQuestions() {
     expect(i18nProperties.getProperty("accountquestions.QUESTION_ONE"))
         .andReturn("account question 1");
@@ -300,7 +278,7 @@ public class StudentAPIControllerTest extends APIControllerTest {
     replay(runService);
     expect(workgroupService.retrieveById(workgroupId)).andReturn(workgroup1);
     expect(workgroupService.isUserInAnyWorkgroupForRun(studentNotInWorkgroup, run1))
-        .andReturn(false);
+        .andReturn(false).anyTimes();
     replay(workgroupService);
     HashMap<String, Object> response = studentAPIController.canBeAddedToWorkgroup(studentAuth,
         runId1, workgroupId, studentIdNotInWorkgroup);

@@ -679,6 +679,7 @@ public class InformationController {
     config.put("startTime", run.getStartTimeMilliseconds());
     config.put("endTime", run.getEndTimeMilliseconds());
     config.put("isLockedAfterEndDate", run.isLockedAfterEndDate());
+    config.put("isSurvey", run.isSurvey());
   }
 
   private void printConfigToResponse(HttpServletResponse response, JSONObject config)
@@ -785,6 +786,7 @@ public class InformationController {
 
   /**
    * Gets the workgroup for the logged in user
+   * 
    * @param run
    * @return Workgroup for the logged in user
    */
@@ -796,7 +798,9 @@ public class InformationController {
       User user = userService.retrieveUser(userDetails);
       List<Workgroup> workgroupListByRunAndUser = workgroupService.getWorkgroupListByRunAndUser(run,
           user);
-      workgroup = workgroupListByRunAndUser.get(0);
+      if (workgroupListByRunAndUser.size() > 0) {
+        workgroup = workgroupListByRunAndUser.get(0);
+      }
     }
     return workgroup;
   }
